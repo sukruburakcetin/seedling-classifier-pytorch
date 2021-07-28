@@ -11,6 +11,7 @@ import torch
 from torch import nn
 from torch import optim
 import torch.nn.functional as F
+from torch.autograd import Variable
 from torchvision import datasets, transforms, models
 
 # Most of the pretrained models require the input to be 224x224 images. Also, we'll need to match the normalization used when the models were trained. Each color channel was normalized separately, the means are `[0.485, 0.456, 0.406]` and the standard deviations are `[0.229, 0.224, 0.225]`.
@@ -18,11 +19,10 @@ from torchvision import datasets, transforms, models
 # In[2]:
 
 
-data_dir = 'C:/Users/BURAK/Desktop/seedling-classifier-pytorch/data'  # DOWNLOAD DATA FOR THIS
+data_dir = 'C:/Users/HTG_SOFTWARE/Desktop/seedling-classifier-pytorch/data'  # DOWNLOAD DATA FOR THIS
 
 # TODO: Define transforms for the training data and testing data
-train_transforms = transforms.Compose([transforms.RandomRotation(30),
-                                       transforms.RandomResizedCrop(224),
+train_transforms = transforms.Compose([transforms.RandomResizedCrop(224),
                                        transforms.RandomHorizontalFlip(),
                                        transforms.ToTensor(),
                                        transforms.Normalize([0.485, 0.456, 0.406],
@@ -81,15 +81,20 @@ model.classifier = classifier
 import time
 
 # In[6]:
+def createTracedModel(model, random_input):
+    model.eval()
+    traced_net = torch.jit.trace(model, random_input)
+    traced_net.save("seedling_segmentation.pt")
 
+    print("Success - model_trace was saved!")
 
 # Try to replace with just ['cuda'] if you are using GPU 
 
-for device in ['cpu', 'cuda']:
+for device in ['cpu']:
 
     criterion = nn.NLLLoss()
     # Only train the classifier parameters, feature parameters are frozen
-    optimizer = optim.Adam(model.classifier.parameters(), lr=0.001)
+    optimizer = optim.Adam(model.classifier.parameters(), lr=0.0001)
 
     model.to(device)
 
@@ -131,7 +136,8 @@ for device in ['cpu', 'cuda']:
 
 
 # Use GPU if it's available
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 
 model = models.densenet121(pretrained=True)
 
@@ -151,7 +157,7 @@ model.classifier = nn.Sequential(nn.Linear(1024, 512),
 criterion = nn.NLLLoss()
 
 # Only train the classifier parameters, feature parameters are frozen
-optimizer = optim.Adam(model.classifier.parameters(), lr=0.003)
+optimizer = optim.Adam(model.classifier.parameters(), lr=0.0003)
 
 model.to(device);
 
@@ -162,7 +168,7 @@ traininglosses = []
 testinglosses = []
 testaccuracy = []
 totalsteps = []
-epochs = 100
+epochs = 50
 steps = 0
 running_loss = 0
 print_every = 5
@@ -236,3 +242,21 @@ checkpoint = {
 
 
 torch.save(checkpoint, './seedlingClassifier.pth')
+
+for i, (inputs, labels) in enumerate(testloader):
+    # show images
+    #imshow(torchvision.utils.make_grid(inputs))
+
+    # Convert torch tensor to Variable
+    inputs = Variable(inputs)
+    labels = Variable(labels)
+
+    inputs = inputs.to(device)
+    labels = labels.to(device)
+
+    print("girdi")
+    if i == 0:
+        createTracedModel(model, inputs)
+        break
+
+

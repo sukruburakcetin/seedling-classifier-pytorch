@@ -40,6 +40,8 @@ def predict(imagepath, verbose=False):
         return {'name': str(imagepath), 'class': 'no_seedling', 'confidence': str(topconf.item())}
 
 
-print(predict('data/1606399760EGGPLANT3.jpeg'))
-print(predict('data/1607132230EGGPLANT4.jpeg'))
-print(predict('data/1606567393EGGPLANT4.jpeg'))
+# print(predict('data/1606399760EGGPLANT3.jpeg'))
+# print(predict('data/1606399760EGGPLANT3.jpeg'))
+# print(predict('data/1607132230EGGPLANT4.jpeg'))
+print(predict('data/14.png'))
+
